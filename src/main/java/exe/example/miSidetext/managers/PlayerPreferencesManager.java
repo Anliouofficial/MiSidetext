@@ -74,6 +74,10 @@ public class PlayerPreferencesManager {
         if (!config.contains("default-channel")) {
             config.set("default-channel", "NORMAL");
         }
+        // 设置默认阅读方向（从左到右）
+        if (!config.contains("reading-direction")) {
+            config.set("reading-direction", "LEFT_TO_RIGHT");
+        }
         
         playerPreferences.put(playerId, config);
     }
@@ -189,6 +193,32 @@ public class PlayerPreferencesManager {
         YamlConfiguration config = getPlayerPreferences(player);
         config.set("default-channel", channel.name());
         savePlayerPreferences(player);
+    }
+
+    /**
+     * 获取玩家的阅读方向
+     */
+    public boolean isLeftToRight(Player player) {
+        String direction = getPlayerPreferences(player).getString("reading-direction", "LEFT_TO_RIGHT");
+        return "LEFT_TO_RIGHT".equals(direction);
+    }
+
+    /**
+     * 设置玩家的阅读方向
+     */
+    public void setReadingDirection(Player player, boolean leftToRight) {
+        YamlConfiguration config = getPlayerPreferences(player);
+        config.set("reading-direction", leftToRight ? "LEFT_TO_RIGHT" : "RIGHT_TO_LEFT");
+        savePlayerPreferences(player);
+    }
+
+    /**
+     * 切换玩家的阅读方向
+     */
+    public boolean toggleReadingDirection(Player player) {
+        boolean current = isLeftToRight(player);
+        setReadingDirection(player, !current);
+        return !current; // 返回新的方向
     }
 
     /**

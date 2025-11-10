@@ -94,7 +94,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             // 子命令补全
             switch (args[0].toLowerCase()) {
                 case "settings":
-                    List<String> settings = Arrays.asList("typing", "bounce", "fall", "status");
+                    List<String> settings = Arrays.asList("typing", "bounce", "fall", "direction", "status");
                     for (String setting : settings) {
                         if (setting.toLowerCase().startsWith(args[1].toLowerCase())) {
                             completions.add(setting);
@@ -118,6 +118,14 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     }
                     break;
             }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("settings") && args[1].equalsIgnoreCase("direction")) {
+            // direction命令的补全
+            List<String> directions = Arrays.asList("left", "right", "toggle");
+            for (String direction : directions) {
+                if (direction.toLowerCase().startsWith(args[2].toLowerCase())) {
+                    completions.add(direction);
+                }
+            }
         } else if (args.length == 3 && args[0].equalsIgnoreCase("performance") && args[1].equalsIgnoreCase("start")) {
             // 性能测试持续时间提示
             completions.add("<持续时间(秒)>");
@@ -140,7 +148,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/st toggle - §f开关侧边文本效果");
         sender.sendMessage("§e/st reload - §f重载插件配置");
         sender.sendMessage("§e/st test - §f测试侧边文本效果");
-        sender.sendMessage("§e/st settings <typing/bounce/fall> <value> - §f调整动画设置");
+        sender.sendMessage("§e/st settings <typing/bounce/fall/direction> <value> - §f调整动画设置");
+        sender.sendMessage("§e/st settings direction <left|right|toggle> - §f切换阅读方向");
         sender.sendMessage("§e/st channel <频道> - §f设置默认聊天频道 (normal/shout/whisper/global)");
         sender.sendMessage("§e/st performance start <持续时间> <频率> <文本长度> - §f开始性能测试");
         sender.sendMessage("§e/st performance status - §f查看测试状态和TPS");
@@ -247,6 +256,31 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 } else {
                     double current = plugin.getPlayerPreferencesManager().getFallDuration(player);
                     player.sendMessage("§6[MiSidetext] §f您当前的掉落持续时间: " + current + "秒");
+                }
+                break;
+            case "direction":
+                if (value != null) {
+                    boolean leftToRight;
+                    if (value.equalsIgnoreCase("left")) {
+                        leftToRight = true;
+                    } else if (value.equalsIgnoreCase("right")) {
+                        leftToRight = false;
+                    } else if (value.equalsIgnoreCase("toggle")) {
+                        leftToRight = plugin.getPlayerPreferencesManager().toggleReadingDirection(player);
+                    } else {
+                        player.sendMessage("§c用法: /st settings direction <left|right|toggle>");
+                        return;
+                    }
+                    if (!value.equalsIgnoreCase("toggle")) {
+                        plugin.getPlayerPreferencesManager().setReadingDirection(player, leftToRight);
+                    }
+                    String direction = leftToRight ? "从左到右" : "从右到左";
+                    player.sendMessage("§6[MiSidetext] §f您的阅读方向已设置为: " + direction);
+                } else {
+                    boolean current = plugin.getPlayerPreferencesManager().isLeftToRight(player);
+                    String direction = current ? "从左到右" : "从右到左";
+                    player.sendMessage("§6[MiSidetext] §f您当前的阅读方向: " + direction);
+                    player.sendMessage("§e使用 /st settings direction toggle 可以切换方向");
                 }
                 break;
             case "status":

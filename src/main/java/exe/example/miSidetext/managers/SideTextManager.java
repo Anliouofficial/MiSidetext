@@ -82,8 +82,8 @@ public class SideTextManager {
         Location eyeLocation = player.getEyeLocation();
         Location baseLocation = calculateBasePosition(eyeLocation);
         
-        // 2. 阅读方向：从左到右排列
-        boolean leftToRight = true;
+        // 2. 阅读方向：从玩家偏好设置获取
+        boolean leftToRight = plugin.getPlayerPreferencesManager().isLeftToRight(player);
         
         // 3. 间距控制：根据字体缩放自动调整字符间距
         double charSpacing = calculateCharSpacing(textScale);
@@ -111,29 +111,51 @@ public class SideTextManager {
             // 为当前行创建显示列表
             lineDisplays.put(lineIndex, new ArrayList<>());
             
-            // 逐字显示效果
-            for (int i = 0; i < line.length(); i++) {
-                final int charIndex = i;
-                final char character = line.charAt(i);
+            // 使用单词级别的处理，将英文单词和数字作为整体处理
+            List<String> textTokens = splitTextIntoTokens(line);
+            int tokenIndex = 0;
+            
+            // 逐token（字符或单词）显示效果
+            for (String token : textTokens) {
+                final int currentTokenIndex = tokenIndex;
+                final String currentToken = token;
                 final double currentYOffset = yOffset;
                 final double currentStartOffset = lineStartOffset;
                 final int lineNumber = lineIndex;
                 final String currentLine = line;
                 
-                // 计算字符显示延迟，包含行延迟
-                long charDelay = (long) ((totalDelay + charIndex) * typingSpeed / 50);
+                // 计算token显示延迟，包含行延迟
+                long tokenDelay = (long) ((totalDelay + currentTokenIndex) * typingSpeed / 50);
+                
+                // 计算token的起始位置
+                double tempTokenXOffset = 0;
+                if (leftToRight) {
+                    // 从左到右：累加之前所有token的宽度
+                    for (int j = 0; j < currentTokenIndex; j++) {
+                        String prevToken = textTokens.get(j);
+                        tempTokenXOffset += prevToken.length() * charSpacing + (isWordOrNumber(prevToken) ? 0.2 * charSpacing : 0);
+                    }
+                } else {
+                    // 从右到左：累加之后所有token的宽度
+                    for (int j = currentTokenIndex + 1; j < textTokens.size(); j++) {
+                        String nextToken = textTokens.get(j);
+                        tempTokenXOffset += nextToken.length() * charSpacing + (isWordOrNumber(nextToken) ? 0.2 * charSpacing : 0);
+                    }
+                }
+                // 声明为final用于内部类引用
+                final double tokenXOffset = tempTokenXOffset;
 
-                // 创建字符显示任务
+                // 创建token显示任务
                 BukkitTask task = new BukkitRunnable() {
                     @Override
                     public void run() {
-                        // 计算字符位置 - 应用居中偏移
+                        // 计算token位置 - 应用居中偏移
                         double xOffset = leftToRight ? 
-                            currentStartOffset + charIndex * charSpacing : 
-                            currentStartOffset - charIndex * charSpacing;
+                            currentStartOffset + tokenXOffset : 
+                            currentStartOffset - tokenXOffset;
                             
-                        // 如果是新行的第一个字符，将前一行相同位置的字符实体标记为准备坠落
-                        if (charIndex == 0 && lineNumber > 0) {
+                        // 如果是新行的第一个token，将前一行相同位置的字符实体标记为准备坠落
+                        if (currentTokenIndex == 0 && lineNumber > 0) {
                             synchronized (SideTextManager.this) {
                                 // 找到前一行对应位置的字符实体
                                 if (lineDisplays.containsKey(lineNumber - 1)) {
@@ -161,7 +183,7 @@ public class SideTextManager {
                             .add(xOffset, currentYOffset, 0);
                         
                         // 创建文本显示实体 - 确保参数正确
-                        TextDisplay textDisplay = createTextDisplay(player.getWorld(), character, charLocation, textScale);
+                        TextDisplay textDisplay = createTextDisplay(player.getWorld(), currentToken, charLocation, textScale);
                         
                         if (textDisplay != null) {
                             // 添加到活跃列表和行显示映射
@@ -186,16 +208,17 @@ public class SideTextManager {
                                 }
                             }, 1);
                         } else {
-                            plugin.getLogger().warning("无法为玩家 " + player.getName() + " 创建文本实体，字符: '" + character + "'");
+                            plugin.getLogger().warning("无法为玩家 " + player.getName() + " 创建文本实体，内容: '" + currentToken + "'");
                         }
                     }
-                }.runTaskLater(plugin, charDelay);
+                }.runTaskLater(plugin, tokenDelay);
 
+                tokenIndex++;
                 tasks.add(task);
             }
             
             // 增加行之间的延迟
-            totalDelay += line.length() + 10; // 每行之间额外延迟10个字符的时间（增加阅读时间）
+            totalDelay += textTokens.size() + 10; // 每行之间额外延迟10个token的时间（增加阅读时间）
             
             // 移除旧的行坠落处理，因为我们现在在新行第一个字符出现时处理坠落
         }
@@ -303,6 +326,45 @@ public class SideTextManager {
     /**
      * 检查字符是否为标点符号
      */
+    /**
+     * 将文本分割为token，英文单词和数字作为整体token
+     */
+    private List<String> splitTextIntoTokens(String text) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        char[] chars = text.toCharArray();
+        
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            
+            // 检查是否是英文字母或数字
+            if (Character.isLetterOrDigit(c)) {
+                currentToken.append(c);
+                // 如果是最后一个字符，添加当前token
+                if (i == chars.length - 1) {
+                    tokens.add(currentToken.toString());
+                }
+            } else {
+                // 如果当前token不为空，先添加它
+                if (currentToken.length() > 0) {
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                }
+                // 添加非单词字符作为单独的token
+                tokens.add(String.valueOf(c));
+            }
+        }
+        
+        return tokens;
+    }
+    
+    /**
+     * 检查是否是单词或数字
+     */
+    private boolean isWordOrNumber(String token) {
+        return token.matches("[a-zA-Z0-9]+");
+    }
+    
     private boolean isPunctuation(char c) {
         return c == ',' || c == '.' || c == '!' || c == '?' || c == ';' || c == ':';
     }
@@ -333,7 +395,7 @@ public class SideTextManager {
     /**
      * 创建文本显示实体
      */
-    private TextDisplay createTextDisplay(org.bukkit.World world, char character, Location location, double textScale) {
+    private TextDisplay createTextDisplay(org.bukkit.World world, String text, Location location, double textScale) {
         // 确保位置有效
         if (world == null || location == null) {
             // 静默处理无效参数，不输出日志
@@ -351,7 +413,7 @@ public class SideTextManager {
             
             // 设置显示属性 - 紫底白边效果，移除半透明黑色边框
             // 使用Minecraft颜色代码设置白色文本
-            textDisplay.setText("§f" + character); // §f 是白色代码
+            textDisplay.setText("§f" + text); // §f 是白色代码
             textDisplay.setBillboard(Display.Billboard.CENTER); // 始终面向玩家
             textDisplay.setBrightness(new Display.Brightness(15, 15)); // 最大亮度
             textDisplay.setInterpolationDuration(20); // 平滑过渡
