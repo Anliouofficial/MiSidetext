@@ -1,7 +1,7 @@
 name: MiSidetext
 version: '1.0-SNAPSHOT'
 main: exe.example.miSidetext.MiSidetext
-authors: [Example]
+authors: [Anliou]
 description: 一款为Minecraft服务器设计的创意聊天插件，在玩家聊天时显示炫酷的侧边文本效果
 api-version: '1.21'
 commands:
