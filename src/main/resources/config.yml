@@ -1,0 +1,98 @@
+# MiSidetext 配置文件
+# 版本: 1.0.0
+
+# 侧边文本显示设置
+side-text:
+  # 是否启用侧边文本效果
+  enabled: true
+  # 文本显示持续时间（秒）
+  duration: 8.0
+  # 打字机效果速度（毫秒/字符）
+  typing-speed: 100
+  # 跳动动画幅度
+  bounce-height: 0.1
+  # 跳动周期（秒）
+  bounce-period: 0.5
+  # 掉落持续时间（秒）
+  fall-duration: 3.0
+  # 最大显示字符数
+  max-length: 50
+  # 是否启用换行时前一行掉落效果
+  line-fall-effect: true
+  # 字符出现时的淡入效果
+  fade-in-effect: true
+  # 每行之间的延迟（字符时间单位）
+  line-delay: 10
+  # 文本显示的X偏移（从玩家侧面的距离）
+  x-offset: 1.5
+  # 文本显示的Y偏移（从玩家眼睛高度的偏移）
+  y-offset: 0.0
+
+# 声音效果设置
+sound-effects:
+  # 是否启用按钮点击声音
+  enabled: true
+  # 按钮点击声音类型
+  click-sound: "block.stone_button.click_on"
+  # 声音音量
+  volume: 1.0
+  # 声音音调
+  pitch: 1.0
+
+# 聊天频道设置
+chat-channels:
+  # 全局频道前缀
+  global-prefix: "!"
+  # 本地频道半径（方块）
+  local-radius: 100.0
+  # 大喊频道前缀
+  shout-prefix: "@"
+  # 小声频道前缀
+  whisper-prefix: "~"
+  # 各频道的颜色代码
+  normal-color: "&f"
+  global-color: "&c"
+  shout-color: "&e"
+  whisper-color: "&7"
+
+# 粒子效果设置
+particle-effects:
+  # 是否启用粒子效果
+  enabled: true
+  # 粒子类型（可选：HEART, FLAME, CRIT, END_ROD等）
+  particle-type: "END_ROD"
+  # 粒子数量
+  particle-count: 3
+  # 粒子显示频率（tick）
+  particle-frequency: 5
+  # 粒子扩散范围
+  particle-spread: 0.2
+
+# 性能设置
+performance:
+  # 最大同时显示的文本实体数
+  max-active-entities: 200
+  # 清理间隔（秒）
+  cleanup-interval: 10.0
+  # 是否启用异步处理
+  async-processing: true
+  # TPS监控警告阈值
+  tps-warning-threshold: 18.0
+
+# 权限设置
+permissions:
+  # 默认启用侧边文本（无需权限）
+  default-enabled: true
+  # 是否允许普通玩家自定义动画设置
+  allow-player-customization: true
+  # 最大自定义打字速度（毫秒）
+  max-typing-speed: 500
+  # 最小自定义打字速度（毫秒）
+  min-typing-speed: 50
+
+# 日志设置
+logging:
+  # 是否记录聊天日志
+  enabled: true
+  # 日志保留天数
+  retention-days: 7
